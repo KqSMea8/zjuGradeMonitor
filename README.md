@@ -7,7 +7,7 @@ A little script to monitor your grade on http://jwbinfosys.zju.edu.cn
  - Pillow
 
 
-Before you deploy this script on your server, make sure you created a file 'secret.py' at current directory.
+Before you run this script on your server, make sure you created a file 'secret.py' at current directory.
 
 One Example of secret.py
 ```
@@ -42,3 +42,6 @@ PASSWORD = 'xxxxxx'
  - --debug : debug mode
  - --send-by-email : Send notification email to you by your smtp server
  - --send-by-sms : Send notification sms to you by alidayu api, you will need a SMS_TEMPLATE that contains 4 variables (${name}, ${grade}, ${credit}, ${point}), Example: "New Grade! 课程:${name}, 成绩:${grade}, 学分:${credit}, 绩点:${point}"
+
+ ### Disclaimer
+ 代码尚不完善，还有许多地方没处理，本人不对可能造成的任何后果负责。
