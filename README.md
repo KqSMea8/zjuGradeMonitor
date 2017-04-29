@@ -38,7 +38,7 @@ PASSWORD = 'xxxxxx'
 ```
 
 ### Usage
-`python3 monitor.py [--options]
-
+`python3 monitor.py [--options]`
+ - --debug : debug mode
  - --send-by-email : Send notification email to you by your smtp server
  - --send-by-sms : Send notification sms to you by alidayu api, you will need a SMS_TEMPLATE that contains 4 variables (${name}, ${grade}, ${credit}, ${point}), Example: "New Grade! 课程:${name}, 成绩:${grade}, 学分:${credit}, 绩点:${point}"
