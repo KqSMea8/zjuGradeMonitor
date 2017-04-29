@@ -105,8 +105,6 @@ class Monitor:
                 self.smtp_server.sendmail(MAIL_SENDER, [MAIL_RECVER], mail.as_string())
             except smtplib.SMTPException as err:
                 print(err)
-        else:
-            print(self.grades)
 
 
     def run(self):
