@@ -19,8 +19,12 @@ import requests
 from PIL import Image
 from config import URL_BASE, URL_CAPTCHA, PATH_CAPTCHA_GIF, PATH_CAPTCHA_BMP, URL_LOGIN_FIRST, \
                    URL_LOGIN_SECOND, URL_QUERY, URL_MAIN_PAGE, URL_QUERY_PAGE, LIST_RECO
-from secret import MAIL_SENDER, MAIL_RECVER, APP_KEY, APP_SECRET, SMS_TYPE, URL_SMS_REQUEST, \
-                   SMS_EXTEND, SMS_REC_NUM, SMS_SIGN_NAME, SMS_TEMPLATE_CODE, STUDENT_ID, PASSWORD
+try:
+    from secret import MAIL_SENDER, MAIL_RECVER, MAIL_SERVER, APP_KEY, APP_SECRET, SMS_TYPE, \
+                   URL_SMS_REQUEST, SMS_EXTEND, SMS_REC_NUM, SMS_SIGN_NAME, SMS_TEMPLATE_CODE, \
+                   STUDENT_ID, PASSWORD
+except ImportError:
+    pass
 
 
 class Monitor:
@@ -50,7 +54,7 @@ class Monitor:
         self.mail = mail
         self.sms = sms
         self.html = ''
-        self.smtp_server = smtplib.SMTP('localhost') if self.mail else None
+        self.smtp_server = smtplib.SMTP(MAIL_SERVER) if self.mail else None
         if self.sms:
             self.sms_sender = Sender(APP_KEY, APP_SECRET, URL_SMS_REQUEST)
             self.sms_sender.extend = SMS_EXTEND
@@ -271,7 +275,7 @@ def main():
       main function, the main purpose of this function is to stop pylint from complain
     """
     _debug = True if '--debug' in sys.argv else False
-    _mail = True if '--send-by-mail' in sys.argv else False
+    _mail = True if '--send-by-email' in sys.argv else False
     _sms = True if '--send-by-sms' in sys.argv else False
     grade_monitor = Monitor(STUDENT_ID, PASSWORD, debug=_debug, mail=_mail, sms=_sms)
     grade_monitor.login()
