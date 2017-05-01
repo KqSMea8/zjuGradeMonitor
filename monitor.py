@@ -20,11 +20,10 @@ from PIL import Image
 from config import URL_BASE, URL_CAPTCHA, PATH_CAPTCHA_GIF, PATH_CAPTCHA_BMP, URL_LOGIN_FIRST, \
                    URL_LOGIN_SECOND, URL_QUERY, URL_MAIN_PAGE, URL_QUERY_PAGE, LIST_RECO
 try:
-    from secret import MAIL_SENDER, MAIL_RECVER, MAIL_SERVER, APP_KEY, APP_SECRET, SMS_TYPE, \
-                   URL_SMS_REQUEST, SMS_EXTEND, SMS_REC_NUM, SMS_SIGN_NAME, SMS_TEMPLATE_CODE, \
-                   STUDENT_ID, PASSWORD
-except ImportError:
-    pass
+    from secret import APP_KEY, APP_SECRET, SMS_TYPE, URL_SMS_REQUEST, SMS_EXTEND, SMS_SIGN_NAME,\
+                       SMS_TEMPLATE_CODE, STUDENT_ID, PASSWORD
+except ImportError as err:
+    print(err)
 
 
 class Monitor:
@@ -54,13 +53,12 @@ class Monitor:
         self.mail = mail
         self.sms = sms
         self.html = ''
-        self.smtp_server = smtplib.SMTP(MAIL_SERVER) if self.mail else None
+        self.smtp_server = None
         if self.sms:
             self.sms_sender = Sender(APP_KEY, APP_SECRET, URL_SMS_REQUEST)
             self.sms_sender.extend = SMS_EXTEND
             self.sms_sender.sms_type = SMS_TYPE
             self.sms_sender.sms_free_sign_name = SMS_SIGN_NAME
-            self.sms_sender.rec_num = SMS_REC_NUM
             self.sms_sender.sms_template_code = SMS_TEMPLATE_CODE
         self.pattern_html = re.compile(r'<table cellspacing.+?</table>', re.S)
         self.pattern_state = re.compile(r'name="__VIEWSTATE" value="(.{45,})"')
@@ -99,10 +97,19 @@ class Monitor:
         if self.mail:
             mail = MIMEText(self.html, 'html', 'utf-8')
             mail['Subject'] = '出新成绩啦！！！'
+            try:
+                from secret import MAIL_SERVER, MAIL_SENDER, MAIL_RECVER
+            except ImportError as err:
+                print(err)
+                MAIL_SERVER = 'localhost'
+                MAIL_SENDER = ''
+                MAIL_RECVER = ''
+            self.smtp_server = smtplib.SMTP(MAIL_SERVER)
             mail['From'] = MAIL_SENDER
             mail['To'] = MAIL_RECVER
             try:
                 self.smtp_server.sendmail(MAIL_SENDER, [MAIL_RECVER], mail.as_string())
+                self.smtp_server.close()
             except smtplib.SMTPException as err:
                 print(err)
 
@@ -175,6 +182,12 @@ class Monitor:
             }
             if grade not in self.grades:
                 if self.sms:
+                    try:
+                        from secret import SMS_REC_NUM
+                    except ImportError as err:
+                        print(err)
+                        SMS_REC_NUM = ''
+                    self.sms_sender.rec_num = SMS_REC_NUM
                     self.sms_sender.sms_param = json.dumps({
                         'name': grade['name'],
                         'grade': grade['grade'],
