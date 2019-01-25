@@ -13,8 +13,9 @@ import re
 import json
 import smtplib
 from email.mime.text import MIMEText
-from exceptions import ApiParamsException
-from sender import Sender
+from exceptions import ApiParamsException, ApiSendException
+#from sender import Sender
+from aliyunsms.services import AliyunSMSClient as Sender
 import requests
 from PIL import Image
 from config import URL_BASE, URL_CAPTCHA, PATH_CAPTCHA_GIF, PATH_CAPTCHA_BMP, URL_LOGIN_FIRST, \
@@ -40,6 +41,7 @@ class Monitor:
           Constructor of Monitor
         """
         self.debug = debug
+        self.sms_test = True
         self.session = requests.Session()
         self.get = self.session.get
         self.post = self.session.post
@@ -55,11 +57,11 @@ class Monitor:
         self.html = ''
         self.smtp_server = None
         if self.sms:
-            self.sms_sender = Sender(APP_KEY, APP_SECRET, URL_SMS_REQUEST)
-            self.sms_sender.extend = SMS_EXTEND
-            self.sms_sender.sms_type = SMS_TYPE
-            self.sms_sender.sms_free_sign_name = SMS_SIGN_NAME
-            self.sms_sender.sms_template_code = SMS_TEMPLATE_CODE
+            self.sms_sender = Sender(APP_KEY, APP_SECRET)
+            #self.sms_sender.extend = SMS_EXTEND
+            #self.sms_sender.sms_type = SMS_TYPE
+            #self.sms_sender.sms_free_sign_name = SMS_SIGN_NAME
+            #self.sms_sender.sms_template_code = SMS_TEMPLATE_CODE
         self.pattern_html = re.compile(r'<table cellspacing.+?</table>', re.S)
         self.pattern_state = re.compile(r'name="__VIEWSTATE" value="(.{45,})"')
         self.pattern_grade = re.compile(r'<td>(\(\d{4}-\d{4}-\d\)-[0-9A-Z]{8}(-\d{7}-\d)?)'
@@ -139,6 +141,10 @@ class Monitor:
             print(err)
             self.state = ''
             self.login()
+        except requests.exceptions.ReadTimeout as err:
+            print(err)
+            self.state = ''
+            self.login()
 
 
     def login(self):
@@ -155,9 +161,11 @@ class Monitor:
             self.open(login_page.url)
         self.open(URL_BASE + URL_MAIN_PAGE)
         self.grades = []
+        temp = self.sms
         self.sms = False
         self.get_grade()
-        self.sms = True
+        self.test_sms()
+        self.sms = temp
 
 
     def get_grade_html(self, response):
@@ -182,11 +190,12 @@ class Monitor:
             }
             if grade not in self.grades:
                 if self.sms:
-                    try:
+                    self.send(grade)
+                    '''try:
                         from secret import SMS_REC_NUM
                     except ImportError as err:
                         print(err)
-                        SMS_REC_NUM = ''
+                        SMS_REC_NUM = '13208022131'
                     self.sms_sender.rec_num = SMS_REC_NUM
                     self.sms_sender.sms_param = json.dumps({
                         'name': grade['name'],
@@ -198,9 +207,31 @@ class Monitor:
                         resp = self.sms_sender.send()
                         print(resp)
                     except ApiParamsException as err:
+                        #self.sms_test = True
                         print(err)
+                    except ApiSendException as err:
+                        #self.sms_test = True
+                        print(err)
+                        #time.sleep(60)
+                    #else:
+                        #self.sms_test = False
+                    time.sleep(1)'''
                 self.grades.append(grade)
                 self.flag = True
+
+
+    def test_sms(self):
+        self.send(self.grades[-1])
+
+
+    def send(self, grade):
+        try:
+            from secret import SMS_REC_NUM
+        except ImportError as err:
+            print(err)
+            SMS_REC_NUM = '13276719789'
+        param = {'name':grade['name'],'grade':grade['grade'],'credit':grade['credit'],'point':grade['point']}
+        self.sms_sender.send_sms(SMS_REC_NUM, SMS_SIGN_NAME, SMS_TEMPLATE_CODE, param)
 
 
     def get_grade(self):
@@ -213,7 +244,7 @@ class Monitor:
         self.parser_grade(response)
         if self.flag:
             self.html = self.get_grade_html(response)
-            self.send_grade()
+            #self.send_grade()
             self.flag = False
 
 
